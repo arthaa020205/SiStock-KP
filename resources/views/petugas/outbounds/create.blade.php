@@ -1,11 +1,10 @@
-
 @extends('layouts.app')
 
-@section('title', 'Tambah Barang Keluar - SiStock')
-@section('page-title', 'Tambah Barang Keluar')
+@section('title', 'Barang Keluar - SiStock')
+@section('page-title', 'Barang Keluar')
 
 @section('content')
-<div class="space-y-6">
+<div class="space-y-5">
 
     <div>
         <a href="{{ route('petugas.outbounds.index') }}"
@@ -13,16 +12,14 @@
             ← Kembali ke Barang Keluar
         </a>
         <p class="text-sm text-gray-500 mt-2">
-            Buat transaksi pengeluaran stok dengan beberapa barang dan batch sekaligus.
+            Pilih produk, masukkan jumlah, lalu simpan transaksi.
         </p>
     </div>
 
     @if ($errors->any())
-        <div class="bg-red-50 border border-red-200 rounded-xl p-4">
-            <p class="font-semibold text-red-700 mb-2">
-                Data belum dapat disimpan:
-            </p>
-            <ul class="list-disc list-inside text-sm text-red-600 space-y-1">
+        <div class="rounded-xl border border-red-200 bg-red-50 p-4">
+            <p class="mb-2 font-semibold text-red-700">Transaksi belum dapat disimpan:</p>
+            <ul class="list-inside list-disc space-y-1 text-sm text-red-600">
                 @foreach ($errors->all() as $error)
                     <li>{{ $error }}</li>
                 @endforeach
@@ -32,37 +29,35 @@
 
     <form action="{{ route('petugas.outbounds.store') }}"
           method="POST"
-          id="outboundForm"
-          class="space-y-6">
+          id="outboundForm">
         @csrf
 
-        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-            <h2 class="text-lg font-semibold text-gray-800 mb-5">
-                Informasi Transaksi
-            </h2>
+        {{-- INFORMASI TRANSAKSI --}}
+        <div class="mb-5 rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
+            <h2 class="mb-4 font-semibold text-gray-800">Informasi Transaksi</h2>
 
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+            <div class="grid grid-cols-1 gap-4 md:grid-cols-3">
 
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                    <label class="mb-2 block text-sm font-medium text-gray-700">
                         Tanggal Pengeluaran
                     </label>
                     <input type="date"
                            name="transaction_date"
                            value="{{ old('transaction_date', date('Y-m-d')) }}"
                            required
-                           class="w-full border border-gray-300 rounded-lg px-3 py-2.5 focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                           class="w-full rounded-lg border border-gray-300 px-3 py-2.5 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-100">
                 </div>
 
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-2">
-                        Alasan Pengeluaran
+                    <label class="mb-2 block text-sm font-medium text-gray-700">
+                        Jenis Pengeluaran
                     </label>
                     <select name="reason"
                             id="reason"
                             required
-                            class="w-full border border-gray-300 rounded-lg px-3 py-2.5 focus:ring-2 focus:ring-blue-500 focus:outline-none">
-                        <option value="">Pilih alasan</option>
+                            class="w-full rounded-lg border border-gray-300 px-3 py-2.5 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-100">
+                        <option value="">Pilih jenis</option>
                         <option value="penjualan">Penjualan</option>
                         <option value="transfer_toko">Transfer ke Toko</option>
                         <option value="rusak">Barang Rusak</option>
@@ -73,12 +68,12 @@
                 </div>
 
                 <div id="customerWrapper" class="hidden">
-                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                    <label class="mb-2 block text-sm font-medium text-gray-700">
                         Pelanggan
                     </label>
                     <select name="customer_id"
                             id="customer_id"
-                            class="w-full border border-gray-300 rounded-lg px-3 py-2.5 focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                            class="w-full rounded-lg border border-gray-300 px-3 py-2.5">
                         <option value="">Pilih pelanggan (opsional)</option>
                         @foreach ($customers as $customer)
                             <option value="{{ $customer->id }}">
@@ -88,574 +83,736 @@
                     </select>
                 </div>
 
-                <div class="md:col-span-2">
-                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                <div class="md:col-span-3">
+                    <label class="mb-2 block text-sm font-medium text-gray-700">
                         Catatan
                     </label>
                     <textarea name="notes"
-                              rows="3"
-                              placeholder="Tambahkan keterangan transaksi jika diperlukan..."
-                              class="w-full border border-gray-300 rounded-lg px-3 py-2.5 focus:ring-2 focus:ring-blue-500 focus:outline-none">{{ old('notes') }}</textarea>
+                              rows="2"
+                              placeholder="Catatan tambahan jika diperlukan..."
+                              class="w-full rounded-lg border border-gray-300 px-3 py-2.5">{{ old('notes') }}</textarea>
+                </div>
+            </div>
+        </div>
+
+        {{-- POS --}}
+        <div class="grid grid-cols-1 items-start gap-5 xl:grid-cols-12">
+
+            {{-- KATALOG --}}
+            <section class="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm xl:col-span-7">
+
+                <div class="border-b border-gray-200 p-5">
+                    <div class="mb-4 flex items-center justify-between">
+                        <div>
+                            <h2 class="font-semibold text-gray-800">Katalog Produk</h2>
+                            <p class="mt-1 text-xs text-gray-500">
+                                Cari produk untuk ditambahkan ke transaksi.
+                            </p>
+                        </div>
+                        <span class="rounded-full bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-700">
+                            {{ count($productData) }} Produk
+                        </span>
+                    </div>
+
+                    <input type="text"
+                           id="productSearch"
+                           placeholder="Cari nama atau kode produk..."
+                           class="w-full rounded-lg border border-gray-300 px-4 py-3 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-100">
                 </div>
 
-            </div>
-        </div>
-
-        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-5">
-                <div>
-                    <h2 class="text-lg font-semibold text-gray-800">
-                        Daftar Barang Keluar
-                    </h2>
-                    <p class="text-sm text-gray-500 mt-1">
-                        Tambahkan barang yang akan dikeluarkan dari gudang.
-                    </p>
+                <div id="productCatalog"
+                     class="grid grid-cols-1 gap-3 p-4 sm:grid-cols-2">
                 </div>
 
-                <button type="button"
-                        id="addItemButton"
-                        class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2.5 rounded-lg text-sm font-medium">
-                    + Tambah Barang
-                </button>
-            </div>
+                <div id="noProductFound"
+                     class="hidden p-8 text-center text-sm text-gray-500">
+                    Produk tidak ditemukan.
+                </div>
+            </section>
 
-            <div id="itemsContainer" class="space-y-5"></div>
+            {{-- KERANJANG --}}
+            <section class="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm xl:sticky xl:top-4 xl:col-span-5">
 
-            <div id="emptyItems"
-                 class="border-2 border-dashed border-gray-200 rounded-xl p-8 text-center">
-                <p class="text-gray-500 text-sm">
-                    Belum ada barang yang ditambahkan.
-                </p>
-                <p class="text-gray-400 text-xs mt-1">
-                    Klik tombol Tambah Barang untuk memulai.
-                </p>
-            </div>
+                <div class="flex items-center justify-between border-b border-gray-200 p-5">
+                    <div>
+                        <h2 class="font-semibold text-gray-800">Keranjang Transaksi</h2>
+                        <p class="mt-1 text-xs text-gray-500">
+                            Atur jumlah barang yang akan dikeluarkan.
+                        </p>
+                    </div>
+
+                    <span id="cartCount"
+                          class="rounded-full bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-700">
+                        0 Item
+                    </span>
+                </div>
+
+                <div id="cartItems" class="max-h-[650px] space-y-4 overflow-y-auto p-4">
+                    <div id="emptyCart"
+                         class="rounded-xl border-2 border-dashed border-gray-200 p-8 text-center">
+                        <div class="mb-2 text-3xl">🛒</div>
+                        <p class="font-medium text-gray-700">Keranjang masih kosong</p>
+                        <p class="mt-1 text-xs text-gray-400">
+                            Pilih produk dari katalog untuk memulai.
+                        </p>
+                    </div>
+                </div>
+
+                <div class="border-t border-gray-200 p-5">
+
+                    <div class="mb-3 flex justify-between text-sm">
+                        <span class="text-gray-500">Jumlah jenis produk</span>
+                        <span id="summaryItems" class="font-semibold">0</span>
+                    </div>
+
+                    <div class="mb-3 flex justify-between text-sm">
+                        <span class="text-gray-500">Total kuantitas</span>
+                        <span id="summaryQuantity" class="font-semibold">0</span>
+                    </div>
+
+                    <div id="saleTotalWrapper"
+                         class="mb-4 hidden border-t border-gray-200 pt-4">
+                        <div class="flex items-center justify-between">
+                            <span class="font-semibold text-gray-700">Total Penjualan</span>
+                            <span id="grandTotal"
+                                  class="text-xl font-bold text-blue-700">
+                                Rp0
+                            </span>
+                        </div>
+                    </div>
+
+                    <button type="submit"
+                            id="submitButton"
+                            disabled
+                            class="w-full rounded-lg bg-blue-600 px-4 py-3 font-semibold text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-gray-300">
+                        Simpan sebagai Draft
+                    </button>
+
+                    <a href="{{ route('petugas.outbounds.index') }}"
+                       class="mt-3 block text-center text-sm text-gray-500 hover:text-gray-800">
+                        Batal
+                    </a>
+                </div>
+            </section>
+
         </div>
-
-        <div class="flex flex-col sm:flex-row justify-end gap-3">
-            <a href="{{ route('petugas.outbounds.index') }}"
-               class="px-5 py-2.5 border border-gray-300 rounded-lg text-gray-700 text-sm font-medium text-center hover:bg-gray-50">
-                Batal
-            </a>
-
-            <button type="submit"
-                    id="submitButton"
-                    class="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium">
-                Simpan sebagai Draft
-            </button>
-        </div>
-
     </form>
 </div>
 
 <script>
 const products = {{ Illuminate\Support\Js::from($productData) }};
-let itemIndex = 0;
 
-const itemsContainer = document.getElementById('itemsContainer');
-const emptyItems = document.getElementById('emptyItems');
-const addItemButton = document.getElementById('addItemButton');
-const outboundForm = document.getElementById('outboundForm');
+let cart = [];
+let nextIndex = 0;
+
+const reasonSelect = document.getElementById('reason');
+const cartItems = document.getElementById('cartItems');
+const productCatalog = document.getElementById('productCatalog');
+
+const money = value => new Intl.NumberFormat('id-ID', {
+    style: 'currency',
+    currency: 'IDR',
+    maximumFractionDigits: 0
+}).format(value || 0);
+
+const number = value => Number(value || 0).toLocaleString('id-ID', {
+    maximumFractionDigits: 3
+});
 
 function escapeHtml(value) {
-    return String(value ?? '').replace(/[&<>"']/g, function (char) {
-        return {
-            '&': '&amp;',
-            '<': '&lt;',
-            '>': '&gt;',
-            '"': '&quot;',
-            "'": '&#039;'
-        }[char];
-    });
+    return String(value ?? '').replace(/[&<>"']/g, char => ({
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#039;'
+    })[char]);
 }
 
-function formatNumber(value) {
-    return Number(value).toLocaleString('id-ID', {
-        maximumFractionDigits: 3
-    });
+function getProduct(id) {
+    return products.find(p => String(p.id) === String(id));
 }
 
 function getUnitOptions(product) {
-    if (!product) {
-        return '';
-    }
-
-    let units = [{
+    const units = [{
         id: product.base_unit_id,
         name: product.base_unit_name,
         symbol: product.base_unit_symbol,
         factor: 1
-    }];
-
-    product.conversions.forEach(conversion => {
-        units.push({
-            id: conversion.unit_id,
-            name: conversion.unit_name,
-            symbol: conversion.unit_symbol,
-            factor: conversion.factor
-        });
-    });
+    }, ...product.conversions];
 
     return units.map(unit => `
-        <option value="${unit.id}" data-factor="${unit.factor}">
-            ${escapeHtml(unit.name)} (${escapeHtml(unit.symbol)})
+        <option value="${unit.unit_id ?? unit.id}"
+                data-factor="${unit.factor}">
+            ${escapeHtml(unit.unit_name ?? unit.name)}
+            (${escapeHtml(unit.unit_symbol ?? unit.symbol)})
         </option>
     `).join('');
 }
 
-function getProduct(productId) {
-    return products.find(product => String(product.id) === String(productId));
+function getUnitPrice(product, unitId) {
+    // Jika menggunakan satuan dasar produk
+    if (String(product.base_unit_id) === String(unitId)) {
+        const price = Number(product.price_per_base_unit);
+
+        return price > 0 ? price : null;
+    }
+
+    // Jika menggunakan satuan konversi
+    const conversion = product.conversions.find(
+        conversion => String(conversion.unit_id) === String(unitId)
+    );
+
+    if (!conversion || conversion.selling_price === null) {
+        return null;
+    }
+
+    const price = Number(conversion.selling_price);
+
+    return price > 0 ? price : null;
 }
 
-function addItem() {
-    const index = itemIndex++;
+function isSale() {
+    return reasonSelect.value === 'penjualan';
+}
+
+function requiresManualBatch() {
+    return ['rusak', 'kadaluarsa'].includes(reasonSelect.value);
+}
+
+function getFactor(item) {
+    return Number(
+        item.querySelector('.unit-select')?.selectedOptions[0]?.dataset.factor || 1
+    );
+}
+
+function getQuantity(item) {
+    return Number(item.querySelector('.quantity-input')?.value || 0);
+}
+
+function getBaseQuantity(item) {
+    return getQuantity(item) * getFactor(item);
+}
+
+function renderCatalog() {
+    const keyword = document.getElementById('productSearch').value.toLowerCase();
+
+    const filtered = products.filter(product =>
+        product.name.toLowerCase().includes(keyword) ||
+        product.code.toLowerCase().includes(keyword)
+    );
+
+    productCatalog.innerHTML = filtered.map(product => {
+        const totalStock = product.stocks.reduce(
+            (total, stock) => total + Number(stock.quantity), 0
+        );
+
+        return `
+            <div class="rounded-xl border border-gray-200 p-4 transition hover:border-blue-300 hover:shadow-sm">
+
+                <div class="mb-3 flex items-start justify-between gap-2">
+                    <div>
+                        <p class="text-xs text-gray-400">${escapeHtml(product.code)}</p>
+                        <h3 class="mt-1 font-semibold text-gray-800">
+                            ${escapeHtml(product.name)}
+                        </h3>
+                    </div>
+
+                    <button type="button"
+                            onclick="addToCart(${product.id})"
+                            class="shrink-0 rounded-lg bg-blue-50 px-3 py-2 text-xs font-semibold text-blue-700 hover:bg-blue-100">
+                        + Tambah
+                    </button>
+                </div>
+
+                <div class="border-t border-gray-100 pt-3">
+                    <p class="text-xs text-gray-500">Stok tersedia</p>
+                    <p class="mt-1 text-sm font-semibold text-gray-800">
+                        ${number(totalStock)} ${escapeHtml(product.base_unit_symbol)}
+                    </p>
+                </div>
+            </div>
+        `;
+    }).join('');
+
+    document.getElementById('noProductFound')
+        .classList.toggle('hidden', filtered.length > 0);
+}
+
+function addToCart(productId) {
+    const product = getProduct(productId);
+
+    if (!product) return;
+
+    const existing = cart.find(item => item.product.id === product.id);
+
+    if (existing) {
+        const input = existing.element.querySelector('.quantity-input');
+        input.value = Number(input.value || 0) + 1;
+        updateItem(existing.element);
+        return;
+    }
+
+    const index = nextIndex++;
 
     const item = document.createElement('div');
-
-    item.className = 'border border-gray-200 rounded-xl p-5 space-y-4';
+    item.className = 'rounded-xl border border-gray-200 p-4';
     item.dataset.index = index;
 
     item.innerHTML = `
-        <div class="flex items-center justify-between">
-            <h3 class="font-semibold text-gray-800">
-                Barang #${index + 1}
-            </h3>
+        <input type="hidden"
+               name="items[${index}][product_id]"
+               value="${product.id}">
+
+        <div class="mb-3 flex items-start justify-between gap-2">
+            <div>
+                <p class="text-xs text-gray-400">${escapeHtml(product.code)}</p>
+                <h3 class="font-semibold text-gray-800">
+                    ${escapeHtml(product.name)}
+                </h3>
+            </div>
 
             <button type="button"
-                    class="remove-item text-red-600 hover:text-red-800 text-sm font-medium">
-                Hapus Barang
+                    class="remove-item text-sm font-medium text-red-600 hover:text-red-800">
+                Hapus
             </button>
         </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-
+        <div class="grid grid-cols-2 gap-3">
             <div>
-                <label class="block text-sm font-medium text-gray-700 mb-2">
-                    Barang
-                </label>
-
-                <select name="items[${index}][product_id]"
-                        class="product-select w-full border border-gray-300 rounded-lg px-3 py-2.5"
-                        required>
-                    <option value="">Pilih barang</option>
-
-                    ${products.map(product => `
-                        <option value="${product.id}">
-                            ${escapeHtml(product.code)} - ${escapeHtml(product.name)}
-                        </option>
-                    `).join('')}
-                </select>
-            </div>
-
-            <div>
-                <label class="block text-sm font-medium text-gray-700 mb-2">
+                <label class="mb-1 block text-xs font-medium text-gray-600">
                     Satuan
                 </label>
-
                 <select name="items[${index}][unit_id]"
-                        class="unit-select w-full border border-gray-300 rounded-lg px-3 py-2.5"
-                        required
-                        disabled>
-                    <option value="">Pilih barang terlebih dahulu</option>
+                        class="unit-select w-full rounded-lg border border-gray-300 px-2 py-2 text-sm"
+                        required>
+                    ${getUnitOptions(product)}
                 </select>
             </div>
 
             <div>
-                <label class="block text-sm font-medium text-gray-700 mb-2">
-                    Jumlah Keluar
+                <label class="mb-1 block text-xs font-medium text-gray-600">
+                    Jumlah
                 </label>
-
                 <input type="number"
                        name="items[${index}][quantity]"
-                       class="quantity-input w-full border border-gray-300 rounded-lg px-3 py-2.5"
+                       class="quantity-input w-full rounded-lg border border-gray-300 px-2 py-2 text-sm"
                        min="0.001"
                        step="0.001"
-                       placeholder="Masukkan jumlah"
-                       required
-                       disabled>
+                       value="1"
+                       required>
+            </div>
+        </div>
+
+        <div class="mt-3 rounded-lg bg-gray-50 p-3">
+            <div class="flex justify-between text-xs">
+                <span class="text-gray-500">Setara satuan dasar</span>
+                <span class="base-quantity font-semibold text-gray-800">1</span>
             </div>
 
-        </div>
-
-        <div class="bg-gray-50 rounded-lg p-3">
-            <p class="text-xs text-gray-500">Jumlah dalam satuan dasar</p>
-            <p class="base-total font-semibold text-gray-800 mt-1">0</p>
-        </div>
-
-        <div class="border-t border-gray-200 pt-4">
-            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-3">
-                <div>
-                    <h4 class="text-sm font-semibold text-gray-800">
-                        Alokasi Batch / Lokasi Rak
-                    </h4>
-                    <p class="text-xs text-gray-500 mt-1">
-                        Bagikan jumlah pengeluaran ke satu atau beberapa batch.
-                    </p>
+            <div class="pricing-wrapper mt-3 hidden border-t border-gray-200 pt-3">
+                <div class="flex justify-between text-xs">
+                    <span class="text-gray-500">Harga satuan</span>
+                    <span class="unit-price font-semibold">-</span>
                 </div>
+                <div class="mt-2 flex justify-between text-sm">
+                    <span class="font-medium text-gray-700">Subtotal</span>
+                    <span class="item-subtotal font-bold text-blue-700">-</span>
+                </div>
+                <p class="price-warning mt-2 hidden text-xs text-red-600"></p>
+            </div>
+        </div>
 
-                <button type="button"
-                        class="add-allocation bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-2 rounded-lg text-xs font-medium"
-                        disabled>
-                    + Tambah Batch / Rak
-                </button>
+        <div class="mt-3">
+            <button type="button"
+                    class="manual-toggle text-xs font-semibold text-blue-700 hover:text-blue-900">
+                + Atur Batch Manual
+            </button>
+
+            <div class="manual-area mt-3 hidden">
+                <p class="mb-2 text-xs text-gray-500">
+                    Pilih batch dan rak serta masukkan jumlah yang diambil.
+                </p>
+
+                <fieldset class="allocation-fields space-y-2">
+                    <div class="allocation-rows space-y-2"></div>
+
+                    <button type="button"
+                            class="add-allocation rounded-lg bg-gray-100 px-3 py-2 text-xs font-medium text-gray-700 hover:bg-gray-200">
+                        + Tambah Alokasi
+                    </button>
+                </fieldset>
             </div>
 
-            <div class="allocations-container space-y-3"></div>
-
-            <p class="allocation-summary text-xs text-gray-500 mt-3">
-                Belum ada alokasi batch.
+            <p class="batch-mode mt-2 text-xs text-green-700">
+                ✓ Batch dan rak akan dipilih otomatis oleh sistem (FEFO).
             </p>
         </div>
     `;
 
-    itemsContainer.appendChild(item);
+    cartItems.appendChild(item);
+
+    const entry = { product, element: item };
+    cart.push(entry);
 
     item.querySelector('.remove-item').addEventListener('click', () => {
+        cart = cart.filter(row => row.element !== item);
         item.remove();
-        updateEmptyState();
-    });
-
-    item.querySelector('.product-select').addEventListener('change', () => {
-        setupProduct(item);
+        updateCart();
     });
 
     item.querySelector('.unit-select').addEventListener('change', () => {
-        updateAllocation(item);
+        resetManualAllocations(item);
+        updateItem(item);
     });
 
     item.querySelector('.quantity-input').addEventListener('input', () => {
-        updateAllocation(item);
+        updateItem(item);
+    });
+
+    item.querySelector('.manual-toggle').addEventListener('click', () => {
+        const area = item.querySelector('.manual-area');
+        const fieldset = item.querySelector('.allocation-fields');
+
+        const opening = area.classList.contains('hidden');
+
+        area.classList.toggle('hidden', !opening);
+        fieldset.disabled = !opening;
+
+        item.querySelector('.manual-toggle').textContent =
+            opening ? '− Gunakan Alokasi Otomatis' : '+ Atur Batch Manual';
+
+        if (opening && item.querySelector('.allocation-rows').children.length === 0) {
+            addAllocationRow(item);
+        }
+
+        updateBatchMode(item);
     });
 
     item.querySelector('.add-allocation').addEventListener('click', () => {
-        addAllocation(item);
+        addAllocationRow(item);
     });
 
-    updateEmptyState();
+    updateItem(item);
+    updateCart();
 }
 
-function setupProduct(item) {
-    const productId = item.querySelector('.product-select').value;
+function resetManualAllocations(item) {
+    const rows = item.querySelector('.allocation-rows');
+
+    if (rows) rows.innerHTML = '';
+
+    if (!item.querySelector('.manual-area').classList.contains('hidden')) {
+        addAllocationRow(item);
+    }
+}
+
+function addAllocationRow(item) {
+    const productId = item.querySelector('input[name$="[product_id]"]').value;
     const product = getProduct(productId);
 
-    const unitSelect = item.querySelector('.unit-select');
-    const quantityInput = item.querySelector('.quantity-input');
-    const addAllocationButton = item.querySelector('.add-allocation');
-    const allocationsContainer = item.querySelector('.allocations-container');
-
-    allocationsContainer.innerHTML = '';
-
-    if (!product) {
-        unitSelect.innerHTML = '<option value="">Pilih barang terlebih dahulu</option>';
-        unitSelect.disabled = true;
-        quantityInput.value = '';
-        quantityInput.disabled = true;
-        addAllocationButton.disabled = true;
-        updateAllocation(item);
-        return;
-    }
-
-    unitSelect.innerHTML = getUnitOptions(product);
-    unitSelect.disabled = false;
-    quantityInput.disabled = false;
-    addAllocationButton.disabled = false;
-
-    addAllocation(item);
-    updateAllocation(item);
-}
-
-function addAllocation(item) {
-    const product = getProduct(item.querySelector('.product-select').value);
-
-    if (!product) {
-        return;
-    }
-
+    const rows = item.querySelector('.allocation-rows');
     const index = item.dataset.index;
-    const allocationsContainer = item.querySelector('.allocations-container');
-
-    const usedBatchIds = Array.from(
-        allocationsContainer.querySelectorAll('.batch-select')
-    ).map(select => select.value).filter(Boolean);
-
-    const availableStocks = product.stocks.filter(stock => {
-        return !usedBatchIds.includes(String(stock.id));
-    });
-
-    if (availableStocks.length === 0) {
-        alert('Tidak ada batch/rak lain yang tersedia untuk barang ini.');
-        return;
-    }
-
-    const allocationIndex = allocationsContainer.children.length;
+    const rowIndex = rows.children.length;
 
     const row = document.createElement('div');
-
-    row.className = 'grid grid-cols-1 md:grid-cols-12 gap-3 items-end bg-gray-50 p-3 rounded-lg';
+    row.className = 'rounded-lg border border-gray-200 p-3';
 
     row.innerHTML = `
-        <div class="md:col-span-7">
-            <label class="block text-xs font-medium text-gray-600 mb-2">
-                Batch / Lokasi Rak
-            </label>
-
-            <select name="items[${index}][allocations][${allocationIndex}][batch_stock_id]"
-                    class="batch-select w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm"
-                    required>
-                <option value="">Pilih batch / rak</option>
-
-                ${availableStocks.map(stock => `
-                    <option value="${stock.id}">
-                        Batch: ${escapeHtml(stock.batch_code)}
-                        | Rak: ${escapeHtml(stock.rack)}
-                        | Stok: ${formatNumber(stock.quantity)}
-                        ${escapeHtml(product.base_unit_symbol)}
-                        | ED: ${escapeHtml(stock.expiry_date)}
-                    </option>
-                `).join('')}
-            </select>
-        </div>
-
-        <div class="md:col-span-4">
-            <label class="block text-xs font-medium text-gray-600 mb-2">
-                Jumlah Diambil (${escapeHtml(product.base_unit_symbol)})
-            </label>
-
-            <input type="number"
-                   name="items[${index}][allocations][${allocationIndex}][base_quantity]"
-                   class="allocation-quantity w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm"
-                   min="0.001"
-                   step="0.001"
-                   placeholder="Jumlah"
-                   required>
-        </div>
-
-        <div class="md:col-span-1">
+        <div class="mb-2 flex items-center justify-between">
+            <span class="text-xs font-semibold text-gray-600">
+                Alokasi ${rowIndex + 1}
+            </span>
             <button type="button"
-                    class="remove-allocation w-full text-red-600 hover:bg-red-50 rounded-lg py-2.5 text-sm"
-                    title="Hapus alokasi">
-                ✕
+                    class="remove-allocation text-xs text-red-600">
+                Hapus
             </button>
         </div>
+
+        <select name="items[${index}][allocations][${rowIndex}][batch_stock_id]"
+                class="batch-select mb-2 w-full rounded-lg border border-gray-300 px-2 py-2 text-xs"
+                required>
+            <option value="">Pilih batch / rak</option>
+            ${product.stocks.map(stock => `
+                <option value="${stock.id}">
+                    ${escapeHtml(stock.batch_code)}
+                    | ${escapeHtml(stock.rack)}
+                    | Stok ${number(stock.quantity)}
+                    | ED ${escapeHtml(stock.expiry_date)}
+                </option>
+            `).join('')}
+        </select>
+
+        <input type="number"
+               name="items[${index}][allocations][${rowIndex}][base_quantity]"
+               class="allocation-quantity w-full rounded-lg border border-gray-300 px-2 py-2 text-xs"
+               min="0.001"
+               step="0.001"
+               placeholder="Jumlah dalam ${escapeHtml(product.base_unit_symbol)}"
+               required>
     `;
 
-    allocationsContainer.appendChild(row);
+    rows.appendChild(row);
 
     row.querySelector('.remove-allocation').addEventListener('click', () => {
         row.remove();
-        refreshBatchOptions(item);
-        updateAllocation(item);
+        updateBatchMode(item);
     });
 
-    row.querySelector('.batch-select').addEventListener('change', () => {
-        const selectedStock = product.stocks.find(stock =>
-            String(stock.id) === row.querySelector('.batch-select').value
-        );
-
-        const quantityInput = row.querySelector('.allocation-quantity');
-
-        if (selectedStock) {
-            quantityInput.max = selectedStock.quantity;
-        } else {
-            quantityInput.removeAttribute('max');
-        }
-
-        refreshBatchOptions(item);
-        updateAllocation(item);
-    });
-
-    row.querySelector('.allocation-quantity').addEventListener('input', () => {
-        updateAllocation(item);
-    });
-
-    refreshBatchOptions(item);
-    updateAllocation(item);
+    updateBatchMode(item);
 }
 
-function refreshBatchOptions(item) {
-    const product = getProduct(item.querySelector('.product-select').value);
+function updateBatchMode(item) {
+    const area = item.querySelector('.manual-area');
+    const fieldset = item.querySelector('.allocation-fields');
+    const message = item.querySelector('.batch-mode');
 
-    if (!product) {
-        return;
+    const isManual = !area.classList.contains('hidden');
+
+    fieldset.disabled = !isManual;
+
+    message.textContent = isManual
+        ? 'Pengaturan batch manual aktif. Pastikan jumlah alokasi sesuai.'
+        : '✓ Batch dan rak akan dipilih otomatis oleh sistem (FEFO).';
+
+    message.className = isManual
+        ? 'batch-mode mt-2 text-xs text-orange-700'
+        : 'batch-mode mt-2 text-xs text-green-700';
+}
+
+function updateItem(item) {
+    const product = getProduct(
+        item.querySelector('input[name$="[product_id]"]').value
+    );
+
+    const quantity = getQuantity(item);
+    const baseQuantity = getBaseQuantity(item);
+
+    item.querySelector('.base-quantity').textContent =
+        `${number(baseQuantity)} ${product.base_unit_symbol}`;
+
+    const pricing = item.querySelector('.pricing-wrapper');
+    const priceWarning = item.querySelector('.price-warning');
+
+    if (isSale()) {
+        pricing.classList.remove('hidden');
+
+        const unitSelect = item.querySelector('.unit-select');
+        const unitId = unitSelect.value;
+        const selectedUnit = unitSelect.selectedOptions[0];
+
+        const unitName = selectedUnit
+            ? selectedUnit.textContent.trim()
+            : 'satuan ini';
+
+        const price = getUnitPrice(product, unitId);
+
+        if (price === null) {
+            item.querySelector('.unit-price').textContent = '-';
+            item.querySelector('.item-subtotal').textContent = '-';
+
+            priceWarning.textContent =
+                `Harga jual untuk ${unitName} belum diatur atau masih bernilai 0.`;
+
+            priceWarning.classList.remove('hidden');
+        } else {
+            item.querySelector('.unit-price').textContent = money(price);
+
+            item.querySelector('.item-subtotal').textContent =
+                money(price * quantity);
+
+            priceWarning.classList.add('hidden');
+        }
+    } else {
+        pricing.classList.add('hidden');
     }
 
-    const rows = Array.from(
-        item.querySelectorAll('.allocations-container > div')
-    );
-
-    const selectedIds = rows.map(row =>
-        row.querySelector('.batch-select').value
-    ).filter(Boolean);
-
-    rows.forEach(row => {
-        const select = row.querySelector('.batch-select');
-        const currentValue = select.value;
-
-        const availableStocks = product.stocks.filter(stock => {
-            return !selectedIds.includes(String(stock.id))
-                || String(stock.id) === currentValue;
-        });
-
-        select.innerHTML = `
-            <option value="">Pilih batch / rak</option>
-            ${availableStocks.map(stock => `
-                <option value="${stock.id}">
-                    Batch: ${escapeHtml(stock.batch_code)}
-                    | Rak: ${escapeHtml(stock.rack)}
-                    | Stok: ${formatNumber(stock.quantity)}
-                    ${escapeHtml(product.base_unit_symbol)}
-                    | ED: ${escapeHtml(stock.expiry_date)}
-                </option>
-            `).join('')}
-        `;
-
-        select.value = currentValue;
-    });
+    updateCart();
 }
 
-function updateAllocation(item) {
-    const product = getProduct(item.querySelector('.product-select').value);
+function updateCart() {
+    const count = cart.length;
 
-    const quantity = parseFloat(
-        item.querySelector('.quantity-input').value
-    ) || 0;
-
-    const unitSelect = item.querySelector('.unit-select');
-    const factor = parseFloat(
-        unitSelect.selectedOptions[0]?.dataset.factor
-    ) || 1;
-
-    const requiredBaseQuantity = quantity * factor;
-
-    const allocationInputs = Array.from(
-        item.querySelectorAll('.allocation-quantity')
-    );
-
-    const allocatedQuantity = allocationInputs.reduce((total, input) => {
-        return total + (parseFloat(input.value) || 0);
+    const totalQuantity = cart.reduce((total, entry) => {
+        return total + getQuantity(entry.element);
     }, 0);
 
-    const difference = requiredBaseQuantity - allocatedQuantity;
+    document.getElementById('emptyCart')
+        ?.classList.toggle('hidden', count > 0);
 
-    item.querySelector('.base-total').textContent =
-        `${formatNumber(requiredBaseQuantity)} ${product?.base_unit_symbol ?? ''}`;
+    document.getElementById('cartCount').textContent = `${count} Item`;
 
-    const summary = item.querySelector('.allocation-summary');
+    document.getElementById('summaryItems').textContent = count;
 
-    if (requiredBaseQuantity <= 0) {
-        summary.textContent = 'Masukkan jumlah barang yang akan dikeluarkan.';
-        summary.className = 'allocation-summary text-xs text-gray-500 mt-3';
-    } else if (Math.abs(difference) <= 0.001) {
-        summary.textContent =
-            `Alokasi sesuai: ${formatNumber(allocatedQuantity)} ${product.base_unit_symbol}`;
-        summary.className = 'allocation-summary text-xs text-green-700 font-medium mt-3';
-    } else if (difference > 0) {
-        summary.textContent =
-            `Masih kurang ${formatNumber(difference)} ${product.base_unit_symbol} dari jumlah yang dibutuhkan.`;
-        summary.className = 'allocation-summary text-xs text-red-600 font-medium mt-3';
-    } else {
-        summary.textContent =
-            `Alokasi melebihi jumlah yang dibutuhkan sebanyak ${formatNumber(Math.abs(difference))} ${product.base_unit_symbol}.`;
-        summary.className = 'allocation-summary text-xs text-red-600 font-medium mt-3';
-    }
-}
+    document.getElementById('summaryQuantity').textContent =
+        number(totalQuantity);
 
-function updateEmptyState() {
-    emptyItems.classList.toggle('hidden', itemsContainer.children.length > 0);
-}
+    let total = 0;
+    let hasInvalidPrice = false;
 
-addItemButton.addEventListener('click', addItem);
-
-document.getElementById('reason').addEventListener('change', function () {
-    const customerWrapper = document.getElementById('customerWrapper');
-    const customerSelect = document.getElementById('customer_id');
-
-    const isSale = this.value === 'penjualan';
-
-    customerWrapper.classList.toggle('hidden', !isSale);
-    customerSelect.required = false;
-
-    if (!isSale) {
-        customerSelect.value = '';
-    }
-});
-
-outboundForm.addEventListener('submit', function (event) {
-    const items = Array.from(itemsContainer.children);
-
-    if (items.length === 0) {
-        event.preventDefault();
-        alert('Tambahkan minimal satu barang.');
-        return;
-    }
-
-    for (const item of items) {
-        const product = getProduct(item.querySelector('.product-select').value);
-
-        if (!product) {
-            event.preventDefault();
-            alert('Pilih barang pada setiap detail transaksi.');
+    cart.forEach(entry => {
+        if (!isSale()) {
             return;
         }
 
-        const quantity = parseFloat(
-            item.querySelector('.quantity-input').value
-        ) || 0;
+        const unitId = entry.element.querySelector('.unit-select').value;
 
-        const factor = parseFloat(
-            item.querySelector('.unit-select').selectedOptions[0]?.dataset.factor
-        ) || 1;
+        const price = getUnitPrice(entry.product, unitId);
 
-        const required = quantity * factor;
+        if (price === null) {
+            hasInvalidPrice = true;
+            return;
+        }
 
-        const rows = Array.from(
-            item.querySelectorAll('.allocations-container > div')
+        total += price * getQuantity(entry.element);
+    });
+
+    document.getElementById('saleTotalWrapper')
+        .classList.toggle('hidden', !isSale());
+
+    document.getElementById('grandTotal').textContent =
+        isSale() && hasInvalidPrice
+            ? 'Periksa harga'
+            : money(total);
+
+    document.getElementById('submitButton').disabled =
+        count === 0 || (isSale() && hasInvalidPrice);
+}
+
+function validateManualAllocation(item) {
+    const area = item.querySelector('.manual-area');
+
+    if (area.classList.contains('hidden')) {
+        return true;
+    }
+
+    const required = getBaseQuantity(item);
+
+    const rows = Array.from(
+        item.querySelectorAll('.allocation-rows > div')
+    );
+
+    if (rows.length === 0) {
+        alert('Tambahkan minimal satu alokasi batch.');
+        return false;
+    }
+
+    let allocated = 0;
+
+    for (const row of rows) {
+        const batchId = row.querySelector('.batch-select').value;
+        const quantity = Number(
+            row.querySelector('.allocation-quantity').value || 0
         );
 
-        if (rows.length === 0) {
-            event.preventDefault();
-            alert(`Tambahkan alokasi batch untuk barang ${product.name}.`);
-            return;
+        if (!batchId || quantity <= 0) {
+            alert('Lengkapi pilihan batch dan jumlah alokasi.');
+            return false;
         }
 
-        let allocated = 0;
-
-        for (const row of rows) {
-            const batchId = row.querySelector('.batch-select').value;
-            const allocation = parseFloat(
-                row.querySelector('.allocation-quantity').value
-            ) || 0;
-
-            const stock = product.stocks.find(stock =>
-                String(stock.id) === batchId
-            );
-
-            if (!stock || allocation <= 0) {
-                event.preventDefault();
-                alert(`Periksa pilihan batch dan jumlah alokasi barang ${product.name}.`);
-                return;
-            }
-
-            if (allocation > stock.quantity) {
-                event.preventDefault();
-                alert(`Alokasi melebihi stok tersedia pada batch ${stock.batch_code}.`);
-                return;
-            }
-
-            allocated += allocation;
-        }
-
-        if (Math.abs(required - allocated) > 0.001) {
-            event.preventDefault();
-            alert(`Total alokasi batch barang ${product.name} harus sama dengan jumlah pengeluaran.`);
-            return;
-        }
+        allocated += quantity;
     }
 
-    document.getElementById('submitButton').disabled = true;
-    document.getElementById('submitButton').textContent = 'Menyimpan...';
-});
+    if (Math.abs(required - allocated) > 0.001) {
+        alert(
+            'Jumlah alokasi batch harus sama dengan jumlah barang dalam satuan dasar.'
+        );
+        return false;
+    }
 
-updateEmptyState();
+    return true;
+}
+
+function updateReason() {
+    const sale = isSale();
+    const manualRequired = requiresManualBatch();
+
+    document.getElementById('customerWrapper')
+        .classList.toggle('hidden', !sale);
+
+    document.getElementById('saleTotalWrapper')
+        .classList.toggle('hidden', !sale);
+
+    if (!sale) {
+        document.getElementById('customer_id').value = '';
+    }
+
+    cart.forEach(entry => {
+        const item = entry.element;
+        const area = item.querySelector('.manual-area');
+        const fieldset = item.querySelector('.allocation-fields');
+
+        if (manualRequired) {
+            area.classList.remove('hidden');
+            fieldset.disabled = false;
+
+            item.querySelector('.manual-toggle').classList.add('hidden');
+
+            if (item.querySelector('.allocation-rows').children.length === 0) {
+                addAllocationRow(item);
+            }
+        } else {
+            area.classList.add('hidden');
+            fieldset.disabled = true;
+            item.querySelector('.manual-toggle').classList.remove('hidden');
+        }
+
+        updateBatchMode(item);
+        updateItem(item);
+    });
+}
+
+document.getElementById('productSearch')
+    .addEventListener('input', renderCatalog);
+
+reasonSelect.addEventListener('change', updateReason);
+
+document.getElementById('outboundForm')
+    .addEventListener('submit', function (event) {
+
+        if (cart.length === 0) {
+            event.preventDefault();
+            alert('Tambahkan minimal satu produk.');
+            return;
+        }
+
+        for (const entry of cart) {
+            const item = entry.element;
+            const product = entry.product;
+
+            if (getQuantity(item) <= 0) {
+                event.preventDefault();
+                alert(`Masukkan jumlah untuk ${product.name}.`);
+                return;
+            }
+
+            if (isSale()) {
+                const price = getUnitPrice(
+                    product,
+                    item.querySelector('.unit-select').value
+                );
+
+                if (price === null || price <= 0) {
+                    event.preventDefault();
+                    alert(`Harga jual ${product.name} belum diatur.`);
+                    return;
+                }
+            }
+
+            if (requiresManualBatch() || !item.querySelector('.manual-area').classList.contains('hidden')) {
+                if (!validateManualAllocation(item)) {
+                    event.preventDefault();
+                    return;
+                }
+            }
+        }
+
+        const button = document.getElementById('submitButton');
+        button.disabled = true;
+        button.textContent = 'Menyimpan...';
+    });
+
+renderCatalog();
+updateCart();
 </script>
 @endsection

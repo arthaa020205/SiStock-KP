@@ -3,6 +3,7 @@ namespace App\Http\Controllers\Petugas;
 
 use App\Http\Controllers\Controller;
 use App\Models\Customer;
+use App\Services\ActivityLogger;
 use Illuminate\Http\Request;
 
 class CustomerController extends Controller
@@ -33,7 +34,20 @@ class CustomerController extends Controller
             'is_active.required' => 'Status customer wajib dipilih.',
         ]);
 
-        Customer::create($validated);
+        $customer = Customer::create($validated);
+
+        ActivityLogger::log(
+            'customer_created',
+            'Menambahkan customer: ' . $customer->name,
+            $customer,
+            [
+                'name' => $customer->name,
+                'phone' => $customer->phone,
+                'email' => $customer->email,
+                'address' => $customer->address,
+                'is_active' => $customer->is_active,
+            ]
+        );
 
         return redirect()
             ->route('petugas.customers.index')
@@ -59,7 +73,31 @@ class CustomerController extends Controller
             'is_active.required' => 'Status customer wajib dipilih.',
         ]);
 
+        $oldData = $customer->only([
+            'name',
+            'phone',
+            'email',
+            'address',
+            'is_active',
+        ]);
+
         $customer->update($validated);
+
+        ActivityLogger::log(
+            'customer_updated',
+            'Memperbarui customer: ' . $customer->name,
+            $customer,
+            [
+                'old' => $oldData,
+                'new' => $customer->only([
+                    'name',
+                    'phone',
+                    'email',
+                    'address',
+                    'is_active',
+                ]),
+            ]
+        );
 
         return redirect()
             ->route('petugas.customers.index')
@@ -74,7 +112,28 @@ class CustomerController extends Controller
                 ->with('error', 'Customer tidak dapat dihapus karena sudah digunakan dalam transaksi.');
         }
 
+        $customerData = [
+            'id' => $customer->id,
+            'name' => $customer->name,
+            'phone' => $customer->phone,
+            'email' => $customer->email,
+            'address' => $customer->address,
+            'is_active' => $customer->is_active,
+        ];
+
+        $customerName = $customer->name;
+        $customerId = $customer->id;
+
         $customer->delete();
+
+        ActivityLogger::log(
+            'customer_deleted',
+            'Menghapus customer: ' . $customerName,
+            null,
+            $customerData + [
+                'deleted_customer_id' => $customerId,
+            ]
+        );
 
         return redirect()
             ->route('petugas.customers.index')

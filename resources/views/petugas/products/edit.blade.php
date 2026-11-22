@@ -18,45 +18,33 @@
         @method('PUT')
 
         <div>
-            <label class="block text-sm font-medium text-gray-700 mb-2">
-                Kode Produk
-            </label>
-
+            <label class="block text-sm font-medium text-gray-700 mb-2">Kode Produk</label>
             <input type="text" name="code"
                 value="{{ old('code', $product->code) }}"
                 class="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-blue-500 focus:outline-none"
                 required>
-
             @error('code')
                 <p class="text-red-600 text-sm mt-1">{{ $message }}</p>
             @enderror
         </div>
 
         <div>
-            <label class="block text-sm font-medium text-gray-700 mb-2">
-                Nama Produk
-            </label>
-
+            <label class="block text-sm font-medium text-gray-700 mb-2">Nama Produk</label>
             <input type="text" name="name"
                 value="{{ old('name', $product->name) }}"
                 class="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-blue-500 focus:outline-none"
                 required>
-
             @error('name')
                 <p class="text-red-600 text-sm mt-1">{{ $message }}</p>
             @enderror
         </div>
 
         <div>
-            <label class="block text-sm font-medium text-gray-700 mb-2">
-                Kategori
-            </label>
-
+            <label class="block text-sm font-medium text-gray-700 mb-2">Kategori</label>
             <select name="category_id"
                 class="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-blue-500 focus:outline-none"
                 required>
                 <option value="">-- Pilih Kategori --</option>
-
                 @foreach($categories as $category)
                     <option value="{{ $category->id }}"
                         {{ old('category_id', $product->category_id) == $category->id ? 'selected' : '' }}>
@@ -67,22 +55,17 @@
                     </option>
                 @endforeach
             </select>
-
             @error('category_id')
                 <p class="text-red-600 text-sm mt-1">{{ $message }}</p>
             @enderror
         </div>
 
         <div>
-            <label class="block text-sm font-medium text-gray-700 mb-2">
-                Satuan Dasar
-            </label>
-
+            <label class="block text-sm font-medium text-gray-700 mb-2">Satuan Dasar</label>
             <select name="base_unit_id"
                 class="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-blue-500 focus:outline-none"
                 required>
                 <option value="">-- Pilih Satuan --</option>
-
                 @foreach($units as $unit)
                     <option value="{{ $unit->id }}"
                         {{ old('base_unit_id', $product->base_unit_id) == $unit->id ? 'selected' : '' }}>
@@ -90,50 +73,77 @@
                     </option>
                 @endforeach
             </select>
-
             @error('base_unit_id')
                 <p class="text-red-600 text-sm mt-1">{{ $message }}</p>
             @enderror
         </div>
 
         <div>
-            <label class="block text-sm font-medium text-gray-700 mb-2">
-                Stok Minimum
-            </label>
-
+            <label class="block text-sm font-medium text-gray-700 mb-2">Stok Minimum</label>
             <input type="number" name="minimum_stock"
                 value="{{ old('minimum_stock', $product->minimum_stock) }}"
                 min="0" step="0.001"
                 class="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-blue-500 focus:outline-none"
                 required>
-
             <p class="text-gray-500 text-xs mt-1">
                 Batas minimum stok menggunakan satuan dasar produk.
             </p>
-
             @error('minimum_stock')
                 <p class="text-red-600 text-sm mt-1">{{ $message }}</p>
             @enderror
         </div>
 
-        <div>
-            <label class="block text-sm font-medium text-gray-700 mb-2">
-                Deskripsi
-            </label>
+        {{-- HARGA JUAL --}}
+        <div class="border-t border-gray-200 pt-5">
+            <h3 class="text-lg font-semibold text-gray-800 mb-1">Harga Jual Produk</h3>
+            <p class="text-sm text-gray-500 mb-4">
+                Perbarui harga jual berdasarkan satuan penjualan.
+            </p>
 
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                        Harga Jual per Pcs (Rp)
+                    </label>
+                    <input type="number" name="price_per_pcs"
+                        value="{{ old('price_per_pcs', $product->price_per_pcs) }}"
+                        min="0" step="0.01"
+                        placeholder="Contoh: 1500"
+                        class="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                        required>
+                    @error('price_per_pcs')
+                        <p class="text-red-600 text-sm mt-1">{{ $message }}</p>
+                    @enderror
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                        Harga Jual per Pack (Rp)
+                    </label>
+                    <input type="number" name="price_per_pack"
+                        value="{{ old('price_per_pack', $product->price_per_pack) }}"
+                        min="0" step="0.01"
+                        placeholder="Contoh: 15000"
+                        class="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                        required>
+                    @error('price_per_pack')
+                        <p class="text-red-600 text-sm mt-1">{{ $message }}</p>
+                    @enderror
+                </div>
+            </div>
+        </div>
+
+        <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">Deskripsi</label>
             <textarea name="description" rows="3"
                 class="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-blue-500 focus:outline-none">{{ old('description', $product->description) }}</textarea>
-
             @error('description')
                 <p class="text-red-600 text-sm mt-1">{{ $message }}</p>
             @enderror
         </div>
 
         <div>
-            <label class="block text-sm font-medium text-gray-700 mb-2">
-                Status Produk
-            </label>
-
+            <label class="block text-sm font-medium text-gray-700 mb-2">Status Produk</label>
             <select name="is_active"
                 class="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-blue-500 focus:outline-none"
                 required>
@@ -144,13 +154,12 @@
                     Tidak Aktif
                 </option>
             </select>
-
             @error('is_active')
                 <p class="text-red-600 text-sm mt-1">{{ $message }}</p>
             @enderror
         </div>
 
-        <div class="flex gap-3 pt-2">
+        <div class="flex flex-wrap gap-3 pt-2">
             <button type="submit"
                 class="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-lg text-sm">
                 Perbarui

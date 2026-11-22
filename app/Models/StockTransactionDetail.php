@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use App\Models\Product;
 
 class StockTransactionDetail extends Model
 {
@@ -14,6 +15,8 @@ class StockTransactionDetail extends Model
         'unit_id',
         'quantity',
         'base_quantity',
+        'unit_price',
+        'subtotal',
     ];
 
     protected function casts(): array
@@ -21,6 +24,8 @@ class StockTransactionDetail extends Model
         return [
             'quantity' => 'decimal:3',
             'base_quantity' => 'decimal:3',
+            'unit_price' => 'decimal:2',
+            'subtotal' => 'decimal:2',
         ];
     }
 
@@ -44,4 +49,3 @@ class StockTransactionDetail extends Model
         return $this->hasMany(StockTransactionBatchDetail::class);
     }
 }
-

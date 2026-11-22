@@ -11,12 +11,14 @@ class ProductUnitConversion extends Model
         'product_id',
         'unit_id',
         'conversion_factor',
+        'selling_price',
     ];
 
     protected function casts(): array
     {
         return [
             'conversion_factor' => 'decimal:3',
+            'selling_price' => 'decimal:2',
         ];
     }
 

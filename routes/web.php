@@ -2,6 +2,7 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Auth\AuthController;
+use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Petugas\HomeController;
 use App\Http\Controllers\Petugas\CategoryController;
@@ -20,6 +21,7 @@ use App\Http\Controllers\Admin\StockOpnameController as AdminStockOpnameControll
 use App\Http\Controllers\Admin\StockMovementController as AdminStockMovementController;
 use App\Http\Controllers\Admin\StockController as AdminStockController;
 use App\Http\Controllers\Admin\ActivityLogController;
+use App\Http\Controllers\Admin\AdminNotificationController;
 
 Route::middleware('guest')->group(function () {
     Route::get('/login', [AuthController::class, 'showLoginForm'])
@@ -29,7 +31,35 @@ Route::middleware('guest')->group(function () {
         ->name('login.process');
 });
 
-Route::middleware('auth')->group(function () {
+// Halaman utama
+Route::get('/', function () {
+
+    if (!auth()->check()) {
+        return redirect()->route('login');
+    }
+
+    if (auth()->user()->hasRole('Admin')) {
+        return redirect()->route('admin.dashboard');
+    }
+
+    if (auth()->user()->hasRole('Petugas Gudang')) {
+        return redirect()->route('petugas.home');
+    }
+
+    abort(403);
+
+});
+
+// Authentication
+Route::middleware('guest')->group(function () {
+    Route::get('/login', [AuthController::class, 'showLoginForm'])
+        ->name('login');
+
+    Route::post('/login', [AuthController::class, 'login'])
+        ->name('login.process');
+});
+
+Route::middleware(['auth', 'active'])->group(function () {
 
     Route::post('/logout', [AuthController::class, 'logout'])
         ->name('logout');
@@ -55,6 +85,31 @@ Route::middleware('auth')->group(function () {
             Route::get('/dashboard', [DashboardController::class, 'index'])
                 ->name('dashboard');
 
+            // Kelola Pengguna
+            Route::get('/users', [UserController::class, 'index'])
+                ->name('users.index');
+
+            Route::get('/users/create', [UserController::class, 'create'])
+                ->name('users.create');
+
+            Route::post('/users', [UserController::class, 'store'])
+                ->name('users.store');
+
+            Route::get('/users/{user}/edit', [UserController::class, 'edit'])
+                ->name('users.edit');
+
+            Route::put('/users/{user}', [UserController::class, 'update'])
+                ->name('users.update');
+
+            Route::get('/users/{user}/reset-password', [UserController::class, 'editPassword'])
+                ->name('users.reset-password');
+
+            Route::put('/users/{user}/reset-password', [UserController::class, 'updatePassword'])
+                ->name('users.update-password');
+
+            Route::patch('/users/{user}/toggle-status', [UserController::class, 'toggleStatus'])
+                ->name('users.toggle-status');
+
             Route::get('/stock-opnames', [AdminStockOpnameController::class, 'index'])
                 ->name('stock-opnames.index');
 
@@ -66,6 +121,16 @@ Route::middleware('auth')->group(function () {
 
             Route::post('/stock-adjustments/{adjustmentRequest}/reject', [AdminStockOpnameController::class, 'rejectAdjustment'])
                 ->name('stock-adjustments.reject');
+
+            // Notifikasi Admin
+            Route::get('/notifications', [AdminNotificationController::class, 'index'])
+                ->name('notifications.index');
+
+            Route::post('/notifications/{notification}/read', [AdminNotificationController::class, 'read'])
+                ->name('notifications.read');
+
+            Route::post('/notifications/mark-all-read', [AdminNotificationController::class, 'markAllRead'])
+                ->name('notifications.mark-all-read');
 
             // Riwayat Pergerakan Stok
             Route::get('/stock-movements', [AdminStockMovementController::class, 'index'])
@@ -144,6 +209,7 @@ Route::middleware('auth')->group(function () {
             Route::get('/stocks', [StockController::class, 'index'])
                 ->name('stocks.index');
 
+
             // Outbound
             Route::get('/outbounds', [OutboundController::class, 'index'])
                 ->name('outbounds.index');
@@ -154,11 +220,19 @@ Route::middleware('auth')->group(function () {
             Route::post('/outbounds', [OutboundController::class, 'store'])
                 ->name('outbounds.store');
 
+            // Edit dan Update Draft
+            Route::get('/outbounds/{outbound}/edit', [OutboundController::class, 'edit'])
+                ->name('outbounds.edit');
+
+            Route::put('/outbounds/{outbound}', [OutboundController::class, 'update'])
+                ->name('outbounds.update');
+
             Route::get('/outbounds/{outbound}', [OutboundController::class, 'show'])
                 ->name('outbounds.show');
 
             Route::post('/outbounds/{outbound}/post', [OutboundController::class, 'post'])
                 ->name('outbounds.post');
+                
 
             // Transfer Lokasi Rak
             Route::get('/transfers', [TransferController::class, 'index'])

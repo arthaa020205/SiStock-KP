@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Petugas;
 
 use App\Http\Controllers\Controller;
 use App\Models\RackLocation;
+use App\Services\ActivityLogger;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 
@@ -35,7 +36,19 @@ class RackLocationController extends Controller
             'is_active.required' => 'Status rak wajib dipilih.',
         ]);
 
-        RackLocation::create($validated);
+        $rackLocation = RackLocation::create($validated);
+
+        ActivityLogger::log(
+            'rack_location_created',
+            'Menambahkan lokasi rak: ' . $rackLocation->name,
+            $rackLocation,
+            [
+                'code' => $rackLocation->code,
+                'name' => $rackLocation->name,
+                'description' => $rackLocation->description,
+                'is_active' => $rackLocation->is_active,
+            ]
+        );
 
         return redirect()
             ->route('petugas.rack-locations.index')
@@ -66,7 +79,29 @@ class RackLocationController extends Controller
             'is_active.required' => 'Status rak wajib dipilih.',
         ]);
 
+        $oldData = $rackLocation->only([
+            'code',
+            'name',
+            'description',
+            'is_active',
+        ]);
+
         $rackLocation->update($validated);
+
+        ActivityLogger::log(
+            'rack_location_updated',
+            'Memperbarui lokasi rak: ' . $rackLocation->name,
+            $rackLocation,
+            [
+                'old' => $oldData,
+                'new' => $rackLocation->only([
+                    'code',
+                    'name',
+                    'description',
+                    'is_active',
+                ]),
+            ]
+        );
 
         return redirect()
             ->route('petugas.rack-locations.index')
@@ -81,7 +116,27 @@ class RackLocationController extends Controller
                 ->with('error', 'Lokasi rak tidak dapat dihapus karena sudah digunakan untuk menyimpan stok barang.');
         }
 
+        $rackLocationData = [
+            'id' => $rackLocation->id,
+            'code' => $rackLocation->code,
+            'name' => $rackLocation->name,
+            'description' => $rackLocation->description,
+            'is_active' => $rackLocation->is_active,
+        ];
+
+        $rackLocationName = $rackLocation->name;
+        $rackLocationId = $rackLocation->id;
+
         $rackLocation->delete();
+
+        ActivityLogger::log(
+            'rack_location_deleted',
+            'Menghapus lokasi rak: ' . $rackLocationName,
+            null,
+            $rackLocationData + [
+                'deleted_rack_location_id' => $rackLocationId,
+            ]
+        );
 
         return redirect()
             ->route('petugas.rack-locations.index')

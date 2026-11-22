@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Petugas;
 
 use App\Http\Controllers\Controller;
 use App\Models\Category;
+use App\Services\ActivityLogger;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 
@@ -34,7 +35,18 @@ class CategoryController extends Controller
             'is_active.required' => 'Status kategori wajib dipilih.',
         ]);
 
-        Category::create($validated);
+        $category = Category::create($validated);
+
+        ActivityLogger::log(
+            'category_created',
+            'Menambahkan kategori: ' . $category->name,
+            $category,
+            [
+                'name' => $category->name,
+                'description' => $category->description,
+                'is_active' => $category->is_active,
+            ]
+        );
 
         return redirect()
             ->route('petugas.categories.index')
@@ -64,7 +76,27 @@ class CategoryController extends Controller
             'is_active.required' => 'Status kategori wajib dipilih.',
         ]);
 
+        $oldData = $category->only([
+            'name',
+            'description',
+            'is_active',
+        ]);
+
         $category->update($validated);
+
+        ActivityLogger::log(
+            'category_updated',
+            'Memperbarui kategori: ' . $category->name,
+            $category,
+            [
+                'old' => $oldData,
+                'new' => $category->only([
+                    'name',
+                    'description',
+                    'is_active',
+                ]),
+            ]
+        );
 
         return redirect()
             ->route('petugas.categories.index')
@@ -79,7 +111,26 @@ class CategoryController extends Controller
                 ->with('error', 'Kategori tidak dapat dihapus karena sudah digunakan oleh barang.');
         }
 
+        $categoryData = [
+            'id' => $category->id,
+            'name' => $category->name,
+            'description' => $category->description,
+            'is_active' => $category->is_active,
+        ];
+
+        $categoryName = $category->name;
+        $categoryId = $category->id;
+
         $category->delete();
+
+        ActivityLogger::log(
+            'category_deleted',
+            'Menghapus kategori: ' . $categoryName,
+            null,
+            $categoryData + [
+                'deleted_category_id' => $categoryId,
+            ]
+        );
 
         return redirect()
             ->route('petugas.categories.index')

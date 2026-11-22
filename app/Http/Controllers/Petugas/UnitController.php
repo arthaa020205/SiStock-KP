@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Petugas;
 
 use App\Http\Controllers\Controller;
 use App\Models\Unit;
+use App\Services\ActivityLogger;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 
@@ -33,7 +34,17 @@ class UnitController extends Controller
             'symbol.unique' => 'Simbol satuan sudah digunakan.',
         ]);
 
-        Unit::create($validated);
+        $unit = Unit::create($validated);
+
+        ActivityLogger::log(
+            'unit_created',
+            'Menambahkan satuan: ' . $unit->name,
+            $unit,
+            [
+                'name' => $unit->name,
+                'symbol' => $unit->symbol,
+            ]
+        );
 
         return redirect()
             ->route('petugas.units.index')
@@ -67,7 +78,25 @@ class UnitController extends Controller
             'symbol.unique' => 'Simbol satuan sudah digunakan.',
         ]);
 
+        $oldData = $unit->only([
+            'name',
+            'symbol',
+        ]);
+
         $unit->update($validated);
+
+        ActivityLogger::log(
+            'unit_updated',
+            'Memperbarui satuan: ' . $unit->name,
+            $unit,
+            [
+                'old' => $oldData,
+                'new' => $unit->only([
+                    'name',
+                    'symbol',
+                ]),
+            ]
+        );
 
         return redirect()
             ->route('petugas.units.index')
@@ -85,7 +114,25 @@ class UnitController extends Controller
                 ->with('error', 'Satuan tidak dapat dihapus karena sudah digunakan oleh produk atau konversi satuan.');
         }
 
+        $unitData = [
+            'id' => $unit->id,
+            'name' => $unit->name,
+            'symbol' => $unit->symbol,
+        ];
+
+        $unitName = $unit->name;
+        $unitId = $unit->id;
+
         $unit->delete();
+
+        ActivityLogger::log(
+            'unit_deleted',
+            'Menghapus satuan: ' . $unitName,
+            null,
+            $unitData + [
+                'deleted_unit_id' => $unitId,
+            ]
+        );
 
         return redirect()
             ->route('petugas.units.index')

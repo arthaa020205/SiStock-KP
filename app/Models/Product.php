@@ -14,6 +14,8 @@ class Product extends Model
         'category_id',
         'base_unit_id',
         'minimum_stock',
+        'price_per_pcs',
+        'price_per_pack',
         'description',
         'is_active',
     ];
@@ -22,6 +24,8 @@ class Product extends Model
     {
         return [
             'minimum_stock' => 'decimal:3',
+            'price_per_pcs' => 'decimal:2',
+            'price_per_pack' => 'decimal:2',
             'is_active' => 'boolean',
         ];
     }

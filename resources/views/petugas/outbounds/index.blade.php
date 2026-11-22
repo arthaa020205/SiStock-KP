@@ -120,11 +120,20 @@
                             </td>
 
                             <td class="px-5 py-4">
-                                <div class="flex items-center justify-center">
+                                <div class="flex items-center justify-center gap-2">
+
                                     <a href="{{ route('petugas.outbounds.show', $outbound->id) }}"
-                                       class="px-3 py-1.5 bg-blue-50 text-blue-600 hover:bg-blue-100 rounded-lg text-xs font-medium">
+                                    class="px-3 py-1.5 bg-blue-50 text-blue-600 hover:bg-blue-100 rounded-lg text-xs font-medium">
                                         Detail
                                     </a>
+
+                                    @if ($outbound->status === 'draft')
+                                        <a href="{{ route('petugas.outbounds.edit', $outbound->id) }}"
+                                        class="px-3 py-1.5 bg-yellow-50 text-yellow-700 hover:bg-yellow-100 rounded-lg text-xs font-medium">
+                                            Edit
+                                        </a>
+                                    @endif
+
                                 </div>
                             </td>
 

@@ -11,39 +11,77 @@ class DashboardController extends Controller
 {
     public function index()
     {
-        // Subquery untuk menghitung total stok setiap produk
-        $stockSubquery = DB::table('product_batches')
-            ->join('batch_stocks', 'product_batches.id', '=', 'batch_stocks.product_batch_id')
-            ->whereColumn('product_batches.product_id', 'products.id')
-            ->selectRaw('COALESCE(SUM(batch_stocks.quantity), 0)');
+        /*
+        |--------------------------------------------------------------------------
+        | Ringkasan Stok Produk
+        |--------------------------------------------------------------------------
+        */
 
-        // Mengambil produk beserta total stoknya
+        // Menghitung stok berdasarkan produk.
+        // LEFT JOIN memastikan produk tanpa batch tetap terhitung.
+        $stockByProduct = DB::table('product_batches as pb')
+            ->leftJoin('batch_stocks as bs', 'bs.product_batch_id', '=', 'pb.id')
+            ->groupBy('pb.product_id')
+            ->selectRaw('
+                pb.product_id,
+                COALESCE(SUM(bs.quantity), 0) as total_stock
+            ');
+
         $products = Product::query()
-            ->where('is_active', true)
+            ->leftJoinSub(
+                $stockByProduct,
+                'product_stock_totals',
+                function ($join) {
+                    $join->on(
+                        'products.id',
+                        '=',
+                        'product_stock_totals.product_id'
+                    );
+                }
+            )
+            ->where('products.is_active', true)
+            ->with('baseUnit')
             ->select('products.*')
-            ->selectSub($stockSubquery, 'total_stock')
+            ->selectRaw('
+                COALESCE(product_stock_totals.total_stock, 0) as total_stock
+            ')
+            ->orderBy('products.name')
             ->get();
 
-        // Total produk aktif
+        /*
+        |--------------------------------------------------------------------------
+        | Statistik Dashboard
+        |--------------------------------------------------------------------------
+        */
+
         $totalProducts = $products->count();
 
-        // Total seluruh stok
-        $totalStock = $products->sum('total_stock');
+        // Menghitung batch yang masih memiliki stok.
+        $totalActiveBatches = DB::table('product_batches as pb')
+            ->join('batch_stocks as bs', 'bs.product_batch_id', '=', 'pb.id')
+            ->join('products as p', 'p.id', '=', 'pb.product_id')
+            ->where('p.is_active', true)
+            ->where('bs.quantity', '>', 0)
+            ->distinct()
+            ->count('pb.id');
 
-        // Produk dengan stok menipis
-        $lowStockProducts = $products
-            ->filter(function ($product) {
-                return $product->total_stock > 0
-                    && $product->total_stock <= $product->minimum_stock;
-            });
+        // Produk dengan stok menipis.
+        $lowStockProducts = $products->filter(function ($product) {
+            return (float) $product->total_stock > 0
+                && (float) $product->total_stock <= (float) $product->minimum_stock;
+        })->values();
 
-        // Produk dengan stok habis
-        $outOfStockProducts = $products
-            ->filter(function ($product) {
-                return $product->total_stock <= 0;
-            });
+        // Produk dengan stok habis.
+        $outOfStockProducts = $products->filter(function ($product) {
+            return (float) $product->total_stock <= 0;
+        })->values();
 
-        // Pergerakan stok terbaru
+        /*
+        |--------------------------------------------------------------------------
+        | Riwayat Pergerakan Stok
+        |--------------------------------------------------------------------------
+        */
+
         $latestMovements = StockMovement::with([
             'batchStock.productBatch.product',
             'batchStock.rackLocation',
@@ -55,7 +93,7 @@ class DashboardController extends Controller
 
         return view('admin.dashboard', compact(
             'totalProducts',
-            'totalStock',
+            'totalActiveBatches',
             'lowStockProducts',
             'outOfStockProducts',
             'latestMovements'

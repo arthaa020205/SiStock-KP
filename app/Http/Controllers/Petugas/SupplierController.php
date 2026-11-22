@@ -3,6 +3,7 @@ namespace App\Http\Controllers\Petugas;
 
 use App\Http\Controllers\Controller;
 use App\Models\Supplier;
+use App\Services\ActivityLogger;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 
@@ -35,7 +36,21 @@ class SupplierController extends Controller
             'is_active.required' => 'Status supplier wajib dipilih.',
         ]);
 
-        Supplier::create($validated);
+        $supplier = Supplier::create($validated);
+
+        ActivityLogger::log(
+            'supplier_created',
+            'Menambahkan supplier: ' . $supplier->name,
+            $supplier,
+            [
+                'name' => $supplier->name,
+                'contact_person' => $supplier->contact_person,
+                'phone' => $supplier->phone,
+                'address' => $supplier->address,
+                'email' => $supplier->email,
+                'is_active' => $supplier->is_active,
+            ]
+        );
 
         return redirect()
             ->route('petugas.suppliers.index')
@@ -62,7 +77,33 @@ class SupplierController extends Controller
             'is_active.required' => 'Status supplier wajib dipilih.',
         ]);
 
+        $oldData = $supplier->only([
+            'name',
+            'contact_person',
+            'phone',
+            'address',
+            'email',
+            'is_active',
+        ]);
+
         $supplier->update($validated);
+
+        ActivityLogger::log(
+            'supplier_updated',
+            'Memperbarui supplier: ' . $supplier->name,
+            $supplier,
+            [
+                'old' => $oldData,
+                'new' => $supplier->only([
+                    'name',
+                    'contact_person',
+                    'phone',
+                    'address',
+                    'email',
+                    'is_active',
+                ]),
+            ]
+        );
 
         return redirect()
             ->route('petugas.suppliers.index')
@@ -77,7 +118,29 @@ class SupplierController extends Controller
                 ->with('error', 'Supplier tidak dapat dihapus karena sudah digunakan dalam transaksi.');
         }
 
+        $supplierData = [
+            'id' => $supplier->id,
+            'name' => $supplier->name,
+            'contact_person' => $supplier->contact_person,
+            'phone' => $supplier->phone,
+            'address' => $supplier->address,
+            'email' => $supplier->email,
+            'is_active' => $supplier->is_active,
+        ];
+
+        $supplierName = $supplier->name;
+        $supplierId = $supplier->id;
+
         $supplier->delete();
+
+        ActivityLogger::log(
+            'supplier_deleted',
+            'Menghapus supplier: ' . $supplierName,
+            null,
+            $supplierData + [
+                'deleted_supplier_id' => $supplierId,
+            ]
+        );
 
         return redirect()
             ->route('petugas.suppliers.index')

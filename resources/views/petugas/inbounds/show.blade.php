@@ -25,6 +25,7 @@
     <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
         <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
 
+            {{-- Nomor Transaksi --}}
             <div>
                 <p class="text-sm text-gray-500">Nomor Transaksi</p>
                 <p class="font-semibold text-gray-800 mt-1">
@@ -32,6 +33,15 @@
                 </p>
             </div>
 
+            {{-- Nomor Faktur Supplier --}}
+            <div>
+                <p class="text-sm text-gray-500">Nomor Faktur Supplier</p>
+                <p class="font-semibold text-blue-700 mt-1">
+                    {{ $inbound->supplier_invoice_number ?: '-' }}
+                </p>
+            </div>
+
+            {{-- Tanggal Transaksi --}}
             <div>
                 <p class="text-sm text-gray-500">Tanggal Transaksi</p>
                 <p class="font-medium text-gray-800 mt-1">
@@ -39,6 +49,7 @@
                 </p>
             </div>
 
+            {{-- Supplier --}}
             <div>
                 <p class="text-sm text-gray-500">Supplier</p>
                 <p class="font-medium text-gray-800 mt-1">
@@ -46,6 +57,7 @@
                 </p>
             </div>
 
+            {{-- Petugas --}}
             <div>
                 <p class="text-sm text-gray-500">Petugas</p>
                 <p class="font-medium text-gray-800 mt-1">
@@ -53,6 +65,7 @@
                 </p>
             </div>
 
+            {{-- Status --}}
             <div>
                 <p class="text-sm text-gray-500">Status</p>
                 <p class="font-medium mt-1">
@@ -60,7 +73,8 @@
                 </p>
             </div>
 
-            <div>
+            {{-- Catatan --}}
+            <div class="md:col-span-2">
                 <p class="text-sm text-gray-500">Catatan</p>
                 <p class="font-medium text-gray-800 mt-1">
                     {{ $inbound->notes ?: '-' }}

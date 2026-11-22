@@ -178,6 +178,28 @@ class TransferController extends Controller
             return $transaction;
             });
 
+            $transaction->load([
+                'details.product',
+                'details.batchDetails.sourceBatchStock.productBatch',
+                'details.batchDetails.sourceBatchStock.rackLocation',
+                'details.batchDetails.destinationBatchStock.rackLocation',
+            ]);
+
+            $transferItems = $transaction->details->map(function ($detail) {
+                return [
+                    'product' => $detail->product->name,
+                    'quantity' => (float) $detail->base_quantity,
+                    'allocations' => $detail->batchDetails->map(function ($allocation) {
+                        return [
+                            'batch_code' => $allocation->sourceBatchStock->productBatch->batch_code,
+                            'source_rack' => $allocation->sourceBatchStock->rackLocation->code,
+                            'destination_rack' => $allocation->destinationBatchStock->rackLocation->code,
+                            'quantity' => (float) $allocation->quantity,
+                        ];
+                    })->values()->toArray(),
+                ];
+            })->values()->toArray();
+
             ActivityLogger::log(
                 'transfer_created',
                 'Membuat draft transfer stok dengan nomor transaksi ' . $transaction->transaction_number,
@@ -186,6 +208,7 @@ class TransferController extends Controller
                     'transaction_number' => $transaction->transaction_number,
                     'total_items' => count($validated['items']),
                     'status' => 'draft',
+                    'items' => $transferItems,
                 ]
             );
 
@@ -355,14 +378,60 @@ class TransferController extends Controller
             return $transaction;
             });
 
+            $transaction->load([
+                'details.product',
+                'details.batchDetails.sourceBatchStock.productBatch',
+                'details.batchDetails.sourceBatchStock.rackLocation',
+                'details.batchDetails.destinationBatchStock.rackLocation',
+            ]);
+
+            $transferItems = $transaction->details->map(function ($detail) {
+                return [
+                    'product' => $detail->product->name,
+                    'product_code' => $detail->product->code,
+                    'quantity' => (float) $detail->base_quantity,
+
+                    'allocations' => $detail->batchDetails->map(function ($allocation) {
+                        return [
+                            'batch_code' => $allocation->sourceBatchStock->productBatch->batch_code,
+                            'source_rack' => $allocation->sourceBatchStock->rackLocation->code,
+                            'destination_rack' => $allocation->destinationBatchStock->rackLocation->code,
+                            'quantity' => (float) $allocation->quantity,
+                        ];
+                    })->values()->toArray(),
+                ];
+            })->values()->toArray();
+
+            $stockMovements = StockMovement::with([
+                'batchStock.productBatch.product',
+                'batchStock.rackLocation',
+            ])
+                ->where('reference_type', StockTransaction::class)
+                ->where('reference_id', $transaction->id)
+                ->get()
+                ->map(function ($movement) {
+                    return [
+                        'product' => $movement->batchStock->productBatch->product->name,
+                        'product_code' => $movement->batchStock->productBatch->product->code,
+                        'batch_code' => $movement->batchStock->productBatch->batch_code,
+                        'rack' => $movement->batchStock->rackLocation->code,
+                        'movement_type' => $movement->movement_type,
+                        'quantity' => (float) $movement->quantity,
+                        'balance_before' => (float) $movement->balance_before,
+                        'balance_after' => (float) $movement->balance_after,
+                    ];
+                })->values()->toArray();
+
             ActivityLogger::log(
                 'transfer_posted',
                 'Melakukan posting transfer stok dengan nomor transaksi ' . $transaction->transaction_number,
                 $transaction,
                 [
                     'transaction_number' => $transaction->transaction_number,
-                    'total_items' => $transaction->details()->count(),
+                    'total_items' => $transaction->details->count(),
                     'status' => 'posted',
+                    'items' => $transferItems,
+                    'stock_movements' => $stockMovements,
                 ]
             );
 

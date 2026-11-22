@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Product;
 use App\Models\ProductUnitConversion;
 use App\Models\Unit;
+use App\Services\ActivityLogger;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 
@@ -47,6 +48,7 @@ class ProductUnitConversionController extends Controller
                     ->where('product_id', $request->product_id),
             ],
             'conversion_factor' => ['required', 'numeric', 'gt:0'],
+            'selling_price' => ['nullable', 'numeric', 'min:0'],
         ], [
             'product_id.required' => 'Produk wajib dipilih.',
             'product_id.exists' => 'Produk yang dipilih tidak valid.',
@@ -56,6 +58,8 @@ class ProductUnitConversionController extends Controller
             'conversion_factor.required' => 'Faktor konversi wajib diisi.',
             'conversion_factor.numeric' => 'Faktor konversi harus berupa angka.',
             'conversion_factor.gt' => 'Faktor konversi harus lebih besar dari 0.',
+            'selling_price.numeric' => 'Harga jual harus berupa angka.',
+            'selling_price.min' => 'Harga jual tidak boleh negatif.',
         ]);
 
         $product = Product::findOrFail($validated['product_id']);
@@ -68,7 +72,26 @@ class ProductUnitConversionController extends Controller
                 ]);
         }
 
-        ProductUnitConversion::create($validated);
+        $unitConversion = ProductUnitConversion::create($validated);
+
+        $unitConversion->load([
+            'product.baseUnit',
+            'unit',
+        ]);
+
+        ActivityLogger::log(
+            'unit_conversion_created',
+            'Menambahkan konversi satuan produk: ' . $unitConversion->product->name,
+            $unitConversion,
+            [
+                'product_id' => $unitConversion->product_id,
+                'product_name' => $unitConversion->product->name,
+                'base_unit' => $unitConversion->product->baseUnit->symbol,
+                'conversion_unit' => $unitConversion->unit->symbol,
+                'conversion_factor' => $unitConversion->conversion_factor,
+                'selling_price' => $unitConversion->selling_price,
+            ]
+        );
 
         return redirect()
             ->route('petugas.unit-conversions.index')
@@ -102,6 +125,7 @@ class ProductUnitConversionController extends Controller
                     ->ignore($unitConversion->id),
             ],
             'conversion_factor' => ['required', 'numeric', 'gt:0'],
+            'selling_price' => ['nullable', 'numeric', 'min:0'],
         ], [
             'product_id.required' => 'Produk wajib dipilih.',
             'product_id.exists' => 'Produk yang dipilih tidak valid.',
@@ -111,6 +135,8 @@ class ProductUnitConversionController extends Controller
             'conversion_factor.required' => 'Faktor konversi wajib diisi.',
             'conversion_factor.numeric' => 'Faktor konversi harus berupa angka.',
             'conversion_factor.gt' => 'Faktor konversi harus lebih besar dari 0.',
+            'selling_price.numeric' => 'Harga jual harus berupa angka.',
+            'selling_price.min' => 'Harga jual tidak boleh negatif.',
         ]);
 
         $product = Product::findOrFail($validated['product_id']);
@@ -123,7 +149,43 @@ class ProductUnitConversionController extends Controller
                 ]);
         }
 
+        $unitConversion->load([
+            'product.baseUnit',
+            'unit',
+        ]);
+
+        $oldData = [
+            'product_id' => $unitConversion->product_id,
+            'product_name' => $unitConversion->product->name,
+            'base_unit' => $unitConversion->product->baseUnit->symbol,
+            'conversion_unit' => $unitConversion->unit->symbol,
+            'conversion_factor' => $unitConversion->conversion_factor,
+            'selling_price' => $unitConversion->selling_price,
+        ];
+
         $unitConversion->update($validated);
+
+        $unitConversion->load([
+            'product.baseUnit',
+            'unit',
+        ]);
+
+        ActivityLogger::log(
+            'unit_conversion_updated',
+            'Memperbarui konversi satuan produk: ' . $unitConversion->product->name,
+            $unitConversion,
+            [
+                'old' => $oldData,
+                'new' => [
+                    'product_id' => $unitConversion->product_id,
+                    'product_name' => $unitConversion->product->name,
+                    'base_unit' => $unitConversion->product->baseUnit->symbol,
+                    'conversion_unit' => $unitConversion->unit->symbol,
+                    'conversion_factor' => $unitConversion->conversion_factor,
+                    'selling_price' => $unitConversion->selling_price,
+                ],
+            ]
+        );
 
         return redirect()
             ->route('petugas.unit-conversions.index')
@@ -132,7 +194,33 @@ class ProductUnitConversionController extends Controller
 
     public function destroy(ProductUnitConversion $unitConversion)
     {
+        $unitConversion->load([
+            'product.baseUnit',
+            'unit',
+        ]);
+
+        $conversionData = [
+            'id' => $unitConversion->id,
+            'product_id' => $unitConversion->product_id,
+            'product_name' => $unitConversion->product->name,
+            'base_unit' => $unitConversion->product->baseUnit->symbol,
+            'conversion_unit' => $unitConversion->unit->symbol,
+            'conversion_factor' => $unitConversion->conversion_factor,
+        ];
+
+        $productName = $unitConversion->product->name;
+        $conversionId = $unitConversion->id;
+
         $unitConversion->delete();
+
+        ActivityLogger::log(
+            'unit_conversion_deleted',
+            'Menghapus konversi satuan produk: ' . $productName,
+            null,
+            $conversionData + [
+                'deleted_conversion_id' => $conversionId,
+            ]
+        );
 
         return redirect()
             ->route('petugas.unit-conversions.index')

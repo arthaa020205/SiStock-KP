@@ -13,6 +13,7 @@ class StockTransaction extends Model
         'transaction_type',
         'transaction_date',
         'supplier_id',
+        'supplier_invoice_number',
         'customer_id',
         'reason',
         'status',

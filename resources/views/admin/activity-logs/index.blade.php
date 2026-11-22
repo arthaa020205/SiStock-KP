@@ -164,7 +164,7 @@
                         <tr class="hover:bg-slate-50">
 
                             <td class="px-5 py-4 text-slate-600 whitespace-nowrap">
-                                {{ $log->created_at?->format('d/m/Y H:i:s') }}
+                                {{ $log->created_at?->copy()->timezone('Asia/Jakarta')->format('d/m/Y H:i:s') }}
                             </td>
 
                             <td class="px-5 py-4">

@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\StockMovement;
 use Illuminate\Http\Request;
+use App\Services\ActivityLogger;
 use App\Exports\StockMovementExport;
 use Maatwebsite\Excel\Facades\Excel;
 use Barryvdh\DomPDF\Facade\Pdf;
@@ -64,10 +65,25 @@ class StockMovementController extends Controller
             'date_to',
         ]);
 
-        return Excel::download(
+        $fileName = 'riwayat-pergerakan-stok-' . now()->format('Y-m-d-His') . '.xlsx';
+
+        $response = Excel::download(
             new StockMovementExport($filters),
-            'riwayat-pergerakan-stok-' . now()->format('Y-m-d-His') . '.xlsx'
+            $fileName
         );
+
+        ActivityLogger::log(
+            'stock_movements_exported_excel',
+            'Admin mengekspor riwayat pergerakan stok ke Excel.',
+            null,
+            [
+                'file_name' => $fileName,
+                'filters' => $filters,
+                'exported_at' => now()->toDateTimeString(),
+            ]
+        );
+
+        return $response;
     }
 
     public function exportPdf(Request $request)
@@ -78,7 +94,6 @@ class StockMovementController extends Controller
             'creator',
         ]);
 
-        // Pencarian produk dan kode batch
         if ($request->filled('search')) {
             $search = $request->search;
 
@@ -91,17 +106,14 @@ class StockMovementController extends Controller
             });
         }
 
-        // Filter jenis pergerakan
         if ($request->filled('movement_type')) {
             $query->where('movement_type', $request->movement_type);
         }
 
-        // Filter tanggal mulai
         if ($request->filled('date_from')) {
             $query->whereDate('created_at', '>=', $request->date_from);
         }
 
-        // Filter tanggal akhir
         if ($request->filled('date_to')) {
             $query->whereDate('created_at', '<=', $request->date_to);
         }
@@ -110,13 +122,34 @@ class StockMovementController extends Controller
             ->latest('created_at')
             ->get();
 
+        $filters = $request->only([
+            'search',
+            'movement_type',
+            'date_from',
+            'date_to',
+        ]);
+
+        $fileName = 'riwayat-pergerakan-stok-' . now()->format('Y-m-d-His') . '.pdf';
+
         $pdf = Pdf::loadView(
             'admin.stock-movements.export-pdf',
             compact('stockMovements')
         )->setPaper('a4', 'landscape');
 
-        return $pdf->download(
-            'riwayat-pergerakan-stok-' . now()->format('Y-m-d-His') . '.pdf'
+        $response = $pdf->download($fileName);
+
+        ActivityLogger::log(
+            'stock_movements_exported_pdf',
+            'Admin mengekspor riwayat pergerakan stok ke PDF.',
+            null,
+            [
+                'file_name' => $fileName,
+                'total_records' => $stockMovements->count(),
+                'filters' => $filters,
+                'exported_at' => now()->toDateTimeString(),
+            ]
         );
+
+        return $response;
     }
 }

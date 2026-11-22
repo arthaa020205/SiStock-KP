@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Category;
 use App\Models\Product;
 use App\Models\Unit;
+use App\Services\ActivityLogger;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 
@@ -39,6 +40,10 @@ class ProductController extends Controller
             'category_id' => ['required', 'exists:categories,id'],
             'base_unit_id' => ['required', 'exists:units,id'],
             'minimum_stock' => ['required', 'numeric', 'min:0'],
+
+            'price_per_pcs' => ['required', 'numeric', 'min:0'],
+            'price_per_pack' => ['required', 'numeric', 'min:0'],
+
             'description' => ['nullable', 'string'],
             'is_active' => ['required', 'boolean'],
         ], [
@@ -52,10 +57,35 @@ class ProductController extends Controller
             'minimum_stock.required' => 'Stok minimum wajib diisi.',
             'minimum_stock.numeric' => 'Stok minimum harus berupa angka.',
             'minimum_stock.min' => 'Stok minimum tidak boleh kurang dari 0.',
+
+            'price_per_pcs.required' => 'Harga jual per Pcs wajib diisi.',
+            'price_per_pcs.numeric' => 'Harga jual per Pcs harus berupa angka.',
+            'price_per_pcs.min' => 'Harga jual per Pcs tidak boleh negatif.',
+
+            'price_per_pack.required' => 'Harga jual per Pack wajib diisi.',
+            'price_per_pack.numeric' => 'Harga jual per Pack harus berupa angka.',
+            'price_per_pack.min' => 'Harga jual per Pack tidak boleh negatif.',
+
             'is_active.required' => 'Status produk wajib dipilih.',
         ]);
 
-        Product::create($validated);
+        $product = Product::create($validated);
+
+        ActivityLogger::log(
+            'product_created',
+            'Menambahkan produk: ' . $product->name,
+            $product,
+            [
+                'code' => $product->code,
+                'name' => $product->name,
+                'category_id' => $product->category_id,
+                'base_unit_id' => $product->base_unit_id,
+                'minimum_stock' => $product->minimum_stock,
+                'price_per_pcs' => $product->price_per_pcs,
+                'price_per_pack' => $product->price_per_pack,
+                'is_active' => $product->is_active,
+            ]
+        );
 
         return redirect()
             ->route('petugas.products.index')
@@ -87,6 +117,10 @@ class ProductController extends Controller
             'category_id' => ['required', 'exists:categories,id'],
             'base_unit_id' => ['required', 'exists:units,id'],
             'minimum_stock' => ['required', 'numeric', 'min:0'],
+
+            'price_per_pcs' => ['required', 'numeric', 'min:0'],
+            'price_per_pack' => ['required', 'numeric', 'min:0'],
+
             'description' => ['nullable', 'string'],
             'is_active' => ['required', 'boolean'],
         ], [
@@ -100,10 +134,51 @@ class ProductController extends Controller
             'minimum_stock.required' => 'Stok minimum wajib diisi.',
             'minimum_stock.numeric' => 'Stok minimum harus berupa angka.',
             'minimum_stock.min' => 'Stok minimum tidak boleh kurang dari 0.',
+
+            'price_per_pcs.required' => 'Harga jual per Pcs wajib diisi.',
+            'price_per_pcs.numeric' => 'Harga jual per Pcs harus berupa angka.',
+            'price_per_pcs.min' => 'Harga jual per Pcs tidak boleh negatif.',
+
+            'price_per_pack.required' => 'Harga jual per Pack wajib diisi.',
+            'price_per_pack.numeric' => 'Harga jual per Pack harus berupa angka.',
+            'price_per_pack.min' => 'Harga jual per Pack tidak boleh negatif.',
+
             'is_active.required' => 'Status produk wajib dipilih.',
         ]);
 
+        $oldData = $product->only([
+            'code',
+            'name',
+            'category_id',
+            'base_unit_id',
+            'minimum_stock',
+            'price_per_pcs',
+            'price_per_pack',
+            'description',
+            'is_active',
+        ]);
+
         $product->update($validated);
+
+        ActivityLogger::log(
+            'product_updated',
+            'Memperbarui produk: ' . $product->name,
+            $product,
+            [
+                'old' => $oldData,
+                'new' => $product->only([
+                    'code',
+                    'name',
+                    'category_id',
+                    'base_unit_id',
+                    'minimum_stock',
+                    'price_per_pcs',
+                    'price_per_pack',
+                    'description',
+                    'is_active',
+                ]),
+            ]
+        );
 
         return redirect()
             ->route('petugas.products.index')
@@ -121,7 +196,31 @@ class ProductController extends Controller
                 ->with('error', 'Produk tidak dapat dihapus karena sudah memiliki batch stok atau konversi satuan.');
         }
 
+        // Simpan informasi produk sebelum dihapus
+        $productData = [
+            'id' => $product->id,
+            'code' => $product->code,
+            'name' => $product->name,
+            'category_id' => $product->category_id,
+            'base_unit_id' => $product->base_unit_id,
+            'minimum_stock' => $product->minimum_stock,
+            'description' => $product->description,
+            'is_active' => $product->is_active,
+        ];
+
+        $productName = $product->name;
+        $productId = $product->id;
+
         $product->delete();
+
+        ActivityLogger::log(
+            'product_deleted',
+            'Menghapus produk: ' . $productName,
+            null,
+            $productData + [
+                'deleted_product_id' => $productId,
+            ]
+        );
 
         return redirect()
             ->route('petugas.products.index')
